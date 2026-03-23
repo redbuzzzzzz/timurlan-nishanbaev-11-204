@@ -19,6 +19,14 @@ pip install -r requirements.txt
 python -m html_downloader
 ```
 
-Результат появится в `data/raw/`.
+Результат первого этапа появится в `data/raw/`.
+
+## 4. Запустить обработку текста
+
+```bash
+python -m text_processing
+```
+
+Результат второго этапа появится в `data/processed/`.
 
 Если нужно использовать свой набор ссылок, замените содержимое `seed_urls.txt` перед запуском.
