@@ -29,4 +29,13 @@ python -m text_processing
 
 Результат второго этапа появится в `data/processed/`.
 
+## 5. Построить индекс и выполнить поиск
+
+```bash
+python -m boolean_search --build-index
+python -m boolean_search "(kursk AND tank) OR rommel"
+```
+
+Индекс появится в `data/index/`, результаты поиска выводятся в консоль.
+
 Если нужно использовать свой набор ссылок, замените содержимое `seed_urls.txt` перед запуском.

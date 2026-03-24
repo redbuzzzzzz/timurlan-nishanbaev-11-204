@@ -1,4 +1,4 @@
-# HTML Downloader
+# Text Search Project
 
 Простой скрипт, который берет список Wikipedia URL, скачивает HTML-страницы и раскладывает их по файлам.
 В репозитории уже есть готовый список URL по военной истории XX века: бои, операции и командующие.
@@ -19,9 +19,11 @@
 .
 ├── data/
 │   ├── raw/
-│   └── processed/
+│   ├── processed/
+│   └── index/
 ├── html_downloader/
 ├── text_processing/
+├── boolean_search/
 ├── seed_urls.txt
 ├── requirements.txt
 ├── README.md
@@ -31,7 +33,8 @@
 
 `html_downloader/` содержит код загрузчика и точку входа для запуска.
 `text_processing/` содержит второй этап: извлечение текста, токенизацию и лемматизацию.
-`data/raw/` хранит HTML первого этапа, `data/processed/` хранит результаты обработки текста.
+`boolean_search/` содержит построение инвертированного индекса и булев поиск.
+`data/raw/` хранит HTML первого этапа, `data/processed/` хранит результаты обработки текста, `data/index/` хранит инвертированный индекс.
 `seed_urls.txt` содержит готовый список English Wikipedia URL по теме.
 
 ## Как запустить
@@ -57,6 +60,10 @@ python -m html_downloader
 - `tokens.txt`
 - `lemmas.txt`
 
+После третьего этапа в `data/index/` появится:
+
+- `inverted_index.json`
+
 ## Второй этап
 
 После того как HTML уже лежит в `data/raw/`, можно запустить обработку текста:
@@ -74,3 +81,19 @@ python -m text_processing
 - сохраняет результат в `data/processed/tokens.txt` и `data/processed/lemmas.txt`
 
 При первом запуске `text_processing` NLTK-данные скачиваются локально в `data/nltk_data/`.
+
+## Третий этап
+
+После того как корпус уже лежит в `data/raw/`, можно построить инвертированный индекс и выполнить булев поиск:
+
+```bash
+python -m boolean_search --build-index
+python -m boolean_search "(kursk AND tank) OR rommel"
+```
+
+Скрипт:
+
+- строит `term -> list of document ids` по документам корпуса
+- сохраняет индекс в `data/index/inverted_index.json`
+- поддерживает `AND`, `OR`, `NOT` и круглые скобки
+- выводит нормализованный запрос, список найденных документов и их количество

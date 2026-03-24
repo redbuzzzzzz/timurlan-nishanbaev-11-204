@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 3.0
+
+- building an inverted index for `data/raw/*.html`
+- saving `data/index/inverted_index.json`
+- running boolean search with `AND`, `OR`, `NOT` and parentheses
+
 ## Version 2.0
 
 - extracting text from `data/raw/*.html`
