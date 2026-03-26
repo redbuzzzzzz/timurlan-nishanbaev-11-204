@@ -26,6 +26,8 @@
 ├── text_processing/
 ├── boolean_search/
 ├── tfidf/
+├── vector_search/
+├── search_web/
 ├── seed_urls.txt
 ├── requirements.txt
 ├── README.md
@@ -37,6 +39,8 @@
 `text_processing/` содержит второй этап: извлечение текста, токенизацию и лемматизацию.
 `boolean_search/` содержит построение инвертированного индекса и булев поиск.
 `tfidf/` содержит четвертый этап: расчет TF-IDF по терминам и леммам.
+`vector_search/` содержит движок векторного поиска и ранжирование по cosine similarity.
+`search_web/` содержит web-интерфейс поиска.
 `data/raw/` хранит HTML первого этапа, `data/processed/` хранит пофайловые токены и леммы, `data/index/` хранит инвертированный индекс, `data/tfidf/` хранит TF-IDF.
 `seed_urls.txt` содержит готовый список English Wikipedia URL по теме.
 
@@ -122,3 +126,19 @@ python -m tfidf
 - считает `tf-idf(term, doc) = tf * idf`
 - считает TF-IDF для лемм, где `tf(lemma, doc)` использует сумму вхождений всех токенов леммы
 - сохраняет пофайловые результаты в `data/tfidf/terms/terms_<N>.txt` и `data/tfidf/lemmas/lemmas_<N>.txt`
+
+## Пятый этап
+
+После того как TF-IDF для лемм уже посчитан, можно запустить web-поиск:
+
+```bash
+uvicorn search_web.main:app --reload
+```
+
+Что делает этап:
+
+- загружает векторы документов из `data/tfidf/lemmas/lemmas_<N>.txt`
+- нормализует запрос: lowercase, токенизация, удаление stop words, лемматизация
+- строит вектор запроса в пространстве лемм корпуса
+- ранжирует документы по cosine similarity
+- показывает топ-10 результатов (document id, score, URL из `data/raw/index.txt`, если есть)

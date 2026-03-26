@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vector Search</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2rem;
+      line-height: 1.5;
+    }
+    form {
+      margin-bottom: 1rem;
+    }
+    input[type="text"] {
+      width: 420px;
+      max-width: 100%;
+      padding: 0.5rem;
+    }
+    button {
+      padding: 0.5rem 0.8rem;
+      cursor: pointer;
+    }
+    .hint {
+      color: #555;
+      margin-bottom: 1rem;
+    }
+    .message {
+      color: #8a1d1d;
+      margin-top: 1rem;
+    }
+    ul {
+      padding-left: 1.2rem;
+    }
+    li {
+      margin: 0.4rem 0;
+    }
+    .score {
+      color: #444;
+      margin-left: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Vector Search</h1>
+
+  <form method="get" action="/">
+    <input type="text" name="q" value="{{ query }}" placeholder="Enter query..." />
+    <button type="submit">Search</button>
+  </form>
+
+  <div class="hint">Top-10 results ranked by cosine similarity.</div>
+
+  {% if query %}
+    <div><strong>Query:</strong> {{ query }}</div>
+    {% if normalized_query %}
+      <div><strong>Normalized query:</strong> {{ normalized_query }}</div>
+    {% endif %}
+  {% endif %}
+
+  {% if message %}
+    <div class="message">{{ message }}</div>
+  {% endif %}
+
+  {% if hits %}
+    <h2>Results</h2>
+    <ul>
+      {% for hit in hits %}
+        <li>
+          <strong>{{ hit.document_id }}</strong>
+          <span class="score">score={{ "%.6f"|format(hit.score) }}</span>
+          {% if hit.url %}
+            <br>
+            <a href="{{ hit.url }}" target="_blank" rel="noopener noreferrer">{{ hit.url }}</a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</body>
+</html>
+

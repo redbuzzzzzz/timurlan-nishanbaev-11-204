@@ -1,5 +1,11 @@
 # Release Notes
 
+## Version 5.0
+
+- adding vector search over lemma TF-IDF vectors
+- ranking by cosine similarity and returning top-10 results
+- adding web interface with FastAPI and Jinja2 (`search_web`)
+
 ## Version 4.0
 
 - calculating per-document TF-IDF for terms from `data/raw/*.html`
