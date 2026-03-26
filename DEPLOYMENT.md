@@ -38,4 +38,12 @@ python -m boolean_search "(kursk AND tank) OR rommel"
 
 Индекс появится в `data/index/`, поиск идет по леммам, результаты выводятся в консоль.
 
+## 6. Посчитать TF-IDF
+
+```bash
+python -m tfidf
+```
+
+Результат четвертого этапа появится в `data/tfidf/terms/` и `data/tfidf/lemmas/`.
+
 Если нужно использовать свой набор ссылок, замените содержимое `seed_urls.txt` перед запуском.

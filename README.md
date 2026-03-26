@@ -20,10 +20,12 @@
 ├── data/
 │   ├── raw/
 │   ├── processed/
-│   └── index/
+│   ├── index/
+│   └── tfidf/
 ├── html_downloader/
 ├── text_processing/
 ├── boolean_search/
+├── tfidf/
 ├── seed_urls.txt
 ├── requirements.txt
 ├── README.md
@@ -34,7 +36,8 @@
 `html_downloader/` содержит код загрузчика и точку входа для запуска.
 `text_processing/` содержит второй этап: извлечение текста, токенизацию и лемматизацию.
 `boolean_search/` содержит построение инвертированного индекса и булев поиск.
-`data/raw/` хранит HTML первого этапа, `data/processed/` хранит пофайловые токены и леммы, `data/index/` хранит инвертированный индекс.
+`tfidf/` содержит четвертый этап: расчет TF-IDF по терминам и леммам.
+`data/raw/` хранит HTML первого этапа, `data/processed/` хранит пофайловые токены и леммы, `data/index/` хранит инвертированный индекс, `data/tfidf/` хранит TF-IDF.
 `seed_urls.txt` содержит готовый список English Wikipedia URL по теме.
 
 ## Как запустить
@@ -57,12 +60,17 @@ python -m html_downloader
 
 После второго этапа в `data/processed/` появятся:
 
-- `tokens/0001.txt`, `tokens/0002.txt`, ...
-- `lemmas/0001.txt`, `lemmas/0002.txt`, ...
+- `tokens/tokens_1.txt`, `tokens/tokens_2.txt`, ...
+- `lemmas/lemmas_1.txt`, `lemmas/lemmas_2.txt`, ...
 
 После третьего этапа в `data/index/` появится:
 
 - `inverted_index.json`
+
+После четвертого этапа в `data/tfidf/` появятся:
+
+- `terms/terms_1.txt`, `terms/terms_2.txt`, ...
+- `lemmas/lemmas_1.txt`, `lemmas/lemmas_2.txt`, ...
 
 ## Второй этап
 
@@ -78,7 +86,7 @@ python -m text_processing
 - извлекает текст из HTML через BeautifulSoup
 - для каждого документа собирает свой набор уникальных токенов
 - для каждого документа группирует токены по леммам через NLTK
-- сохраняет результат в `data/processed/tokens/<doc_id>.txt` и `data/processed/lemmas/<doc_id>.txt`
+- сохраняет результат в `data/processed/tokens/tokens_<N>.txt` и `data/processed/lemmas/lemmas_<N>.txt`
 
 При первом запуске `text_processing` NLTK-данные скачиваются локально в `data/nltk_data/`.
 
@@ -98,3 +106,19 @@ python -m boolean_search "(kursk AND tank) OR rommel"
 - перед поиском лемматизирует термины запроса
 - поддерживает `AND`, `OR`, `NOT` и круглые скобки
 - выводит нормализованный запрос, список найденных документов и их количество
+
+## Четвертый этап
+
+После того как корпус уже лежит в `data/raw/`, можно посчитать TF-IDF:
+
+```bash
+python -m tfidf
+```
+
+Скрипт:
+
+- считает по каждому документу `tf(term, doc) = count(term in doc) / total_terms(doc)`
+- считает `idf(term)` по всему корпусу
+- считает `tf-idf(term, doc) = tf * idf`
+- считает TF-IDF для лемм, где `tf(lemma, doc)` использует сумму вхождений всех токенов леммы
+- сохраняет пофайловые результаты в `data/tfidf/terms/terms_<N>.txt` и `data/tfidf/lemmas/lemmas_<N>.txt`

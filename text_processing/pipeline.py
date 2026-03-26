@@ -152,9 +152,8 @@ def build_stop_words() -> set[str]:
     return set(stopwords.words("english")) | EXTRA_STOPWORDS
 
 
-def tokenize_text(text: str, stop_words: set[str]) -> set[str]:
-    tokens = set()
-
+def extract_filtered_tokens(text: str, stop_words: set[str]) -> list[str]:
+    tokens: list[str] = []
     for token in TOKEN_RE.findall(text.lower()):
         if len(token) < 3:
             continue
@@ -164,9 +163,13 @@ def tokenize_text(text: str, stop_words: set[str]) -> set[str]:
             continue
         if ROMAN_NUMERAL_RE.fullmatch(token):
             continue
-        tokens.add(token)
+        tokens.append(token)
 
     return tokens
+
+
+def tokenize_text(text: str, stop_words: set[str]) -> set[str]:
+    return set(extract_filtered_tokens(text, stop_words))
 
 
 def lemmatize_token(token: str, lemmatizer: WordNetLemmatizer) -> str:
