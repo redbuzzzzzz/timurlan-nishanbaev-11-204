@@ -1,20 +1,12 @@
 from __future__ import annotations
 
 import math
-from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
 
-from nltk.stem import WordNetLemmatizer
-
 from text_processing.pipeline import (
     DEFAULT_NLTK_DATA_DIR,
-    build_stop_words,
-    collect_html_files,
-    ensure_nltk_data,
-    extract_filtered_tokens,
-    extract_text_from_html,
-    lemmatize_token,
+    collect_document_frequency_results,
 )
 
 
@@ -23,8 +15,8 @@ class DocumentStats:
     document_id: str
     output_index: int
     total_terms: int
-    term_counts: Counter[str]
-    lemma_counts: Counter[str]
+    term_counts: dict[str, int]
+    lemma_counts: dict[str, int]
 
 
 @dataclass(frozen=True)
@@ -38,43 +30,27 @@ def collect_document_stats(
     input_dir: Path,
     nltk_data_dir: Path = DEFAULT_NLTK_DATA_DIR,
 ) -> list[DocumentStats]:
-    ensure_nltk_data(nltk_data_dir)
-
-    html_files = collect_html_files(input_dir)
-    stop_words = build_stop_words()
-    lemmatizer = WordNetLemmatizer()
-    document_stats: list[DocumentStats] = []
-
-    for position, html_file in enumerate(html_files, start=1):
-        html = html_file.read_text(encoding="utf-8", errors="ignore")
-        text = extract_text_from_html(html)
-        tokens = extract_filtered_tokens(text, stop_words)
-
-        term_counts: Counter[str] = Counter(tokens)
-        lemma_counts: Counter[str] = Counter()
-        for token, count in term_counts.items():
-            lemma = lemmatize_token(token, lemmatizer)
-            lemma_counts[lemma] += count
-
-        document_stats.append(
-            DocumentStats(
-                document_id=html_file.name,
-                output_index=position,
-                total_terms=len(tokens),
-                term_counts=term_counts,
-                lemma_counts=lemma_counts,
-            )
+    document_frequency_results = collect_document_frequency_results(
+        input_dir, nltk_data_dir
+    )
+    return [
+        DocumentStats(
+            document_id=result.document_id,
+            output_index=result.output_index,
+            total_terms=result.total_terms,
+            term_counts=result.term_counts,
+            lemma_counts=result.lemma_counts,
         )
-
-    return document_stats
+        for result in document_frequency_results
+    ]
 
 
 def build_idf(values_per_document: list[set[str]]) -> dict[str, float]:
     documents_count = len(values_per_document)
-    document_frequency: Counter[str] = Counter()
+    document_frequency: dict[str, int] = {}
     for values in values_per_document:
         for value in values:
-            document_frequency[value] += 1
+            document_frequency[value] = document_frequency.get(value, 0) + 1
 
     idf: dict[str, float] = {}
     for value, frequency in document_frequency.items():
@@ -96,7 +72,7 @@ def prepare_tfidf_output_dirs(output_dir: Path) -> tuple[Path, Path]:
 
 
 def write_term_tfidf(
-    term_counts: Counter[str],
+    term_counts: dict[str, int],
     total_terms: int,
     term_idf: dict[str, float],
     output_path: Path,
@@ -116,7 +92,7 @@ def write_term_tfidf(
 
 
 def write_lemma_tfidf(
-    lemma_counts: Counter[str],
+    lemma_counts: dict[str, int],
     total_terms: int,
     lemma_idf: dict[str, float],
     output_path: Path,
@@ -165,4 +141,3 @@ def process_corpus(
         terms_dir=terms_dir,
         lemmas_dir=lemmas_dir,
     )
-

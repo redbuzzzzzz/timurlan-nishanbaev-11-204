@@ -69,6 +69,15 @@ class DocumentProcessingResult:
 
 
 @dataclass(frozen=True)
+class DocumentFrequencyResult:
+    document_id: str
+    output_index: int
+    total_terms: int
+    term_counts: dict[str, int]
+    lemma_counts: dict[str, int]
+
+
+@dataclass(frozen=True)
 class ProcessingSummary:
     documents: int
     tokens_dir: Path
@@ -259,6 +268,41 @@ def collect_document_results(
         analyze_html_file(html_file, stop_words, lemmatizer)
         for html_file in html_files
     ]
+
+
+def collect_document_frequency_results(
+    input_dir: Path,
+    nltk_data_dir: Path = DEFAULT_NLTK_DATA_DIR,
+) -> list[DocumentFrequencyResult]:
+    ensure_nltk_data(nltk_data_dir)
+
+    html_files = collect_html_files(input_dir)
+    stop_words = build_stop_words()
+    lemmatizer = WordNetLemmatizer()
+    results: list[DocumentFrequencyResult] = []
+
+    for position, html_file in enumerate(html_files, start=1):
+        html = html_file.read_text(encoding="utf-8", errors="ignore")
+        text = extract_text_from_html(html)
+        tokens = extract_filtered_tokens(text, stop_words)
+        term_counts = defaultdict(int)
+        lemma_counts = defaultdict(int)
+
+        for token in tokens:
+            term_counts[token] += 1
+            lemma_counts[lemmatize_token(token, lemmatizer)] += 1
+
+        results.append(
+            DocumentFrequencyResult(
+                document_id=html_file.name,
+                output_index=position,
+                total_terms=len(tokens),
+                term_counts=dict(term_counts),
+                lemma_counts=dict(lemma_counts),
+            )
+        )
+
+    return results
 
 
 def process_corpus(
