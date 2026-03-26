@@ -7,11 +7,7 @@ from pathlib import Path
 
 from text_processing.pipeline import (
     DEFAULT_NLTK_DATA_DIR,
-    build_stop_words,
-    collect_html_files,
-    ensure_nltk_data,
-    extract_text_from_html,
-    tokenize_text,
+    collect_document_results,
 )
 
 
@@ -32,20 +28,13 @@ def build_inverted_index(
     input_dir: Path,
     nltk_data_dir: Path = DEFAULT_NLTK_DATA_DIR,
 ) -> InvertedIndexData:
-    ensure_nltk_data(nltk_data_dir)
-
-    html_files = collect_html_files(input_dir)
-    stop_words = build_stop_words()
     postings: dict[str, set[str]] = defaultdict(set)
-    document_ids = [html_file.name for html_file in html_files]
+    document_results = collect_document_results(input_dir, nltk_data_dir)
+    document_ids = [result.document_id for result in document_results]
 
-    for html_file in html_files:
-        html = html_file.read_text(encoding="utf-8", errors="ignore")
-        text = extract_text_from_html(html)
-        tokens = tokenize_text(text, stop_words)
-
-        for token in tokens:
-            postings[token].add(html_file.name)
+    for result in document_results:
+        for lemma in result.lemma_groups:
+            postings[lemma].add(result.document_id)
 
     sorted_index = {
         term: sorted(documents)

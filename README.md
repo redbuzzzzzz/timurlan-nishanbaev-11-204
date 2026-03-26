@@ -34,7 +34,7 @@
 `html_downloader/` содержит код загрузчика и точку входа для запуска.
 `text_processing/` содержит второй этап: извлечение текста, токенизацию и лемматизацию.
 `boolean_search/` содержит построение инвертированного индекса и булев поиск.
-`data/raw/` хранит HTML первого этапа, `data/processed/` хранит результаты обработки текста, `data/index/` хранит инвертированный индекс.
+`data/raw/` хранит HTML первого этапа, `data/processed/` хранит пофайловые токены и леммы, `data/index/` хранит инвертированный индекс.
 `seed_urls.txt` содержит готовый список English Wikipedia URL по теме.
 
 ## Как запустить
@@ -57,8 +57,8 @@ python -m html_downloader
 
 После второго этапа в `data/processed/` появятся:
 
-- `tokens.txt`
-- `lemmas.txt`
+- `tokens/0001.txt`, `tokens/0002.txt`, ...
+- `lemmas/0001.txt`, `lemmas/0002.txt`, ...
 
 После третьего этапа в `data/index/` появится:
 
@@ -76,9 +76,9 @@ python -m text_processing
 
 - убирает содержимое `script`, `style` и `noscript`
 - извлекает текст из HTML через BeautifulSoup
-- собирает один общий список уникальных токенов
-- лемматизирует токены через NLTK
-- сохраняет результат в `data/processed/tokens.txt` и `data/processed/lemmas.txt`
+- для каждого документа собирает свой набор уникальных токенов
+- для каждого документа группирует токены по леммам через NLTK
+- сохраняет результат в `data/processed/tokens/<doc_id>.txt` и `data/processed/lemmas/<doc_id>.txt`
 
 При первом запуске `text_processing` NLTK-данные скачиваются локально в `data/nltk_data/`.
 
@@ -93,7 +93,8 @@ python -m boolean_search "(kursk AND tank) OR rommel"
 
 Скрипт:
 
-- строит `term -> list of document ids` по документам корпуса
+- строит `lemma -> list of document ids` по документам корпуса
 - сохраняет индекс в `data/index/inverted_index.json`
+- перед поиском лемматизирует термины запроса
 - поддерживает `AND`, `OR`, `NOT` и круглые скобки
 - выводит нормализованный запрос, список найденных документов и их количество

@@ -3,7 +3,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from nltk.stem import WordNetLemmatizer
+
 from .indexing import InvertedIndexData
+from text_processing.pipeline import DEFAULT_NLTK_DATA_DIR, ensure_nltk_data, lemmatize_token
 
 TOKEN_PATTERN = re.compile(r"\(|\)|AND|OR|NOT|[A-Za-z]+", re.IGNORECASE)
 PRECEDENCE = {"OR": 1, "AND": 2, "NOT": 3}
@@ -18,7 +21,9 @@ class QueryResult:
 
 
 def search_query(query: str, index_data: InvertedIndexData) -> QueryResult:
-    tokens = tokenize_query(query)
+    ensure_nltk_data(DEFAULT_NLTK_DATA_DIR)
+    lemmatizer = WordNetLemmatizer()
+    tokens = tokenize_query(query, lemmatizer)
     postfix = to_postfix(tokens)
     documents = evaluate_postfix(
         postfix,
@@ -31,7 +36,7 @@ def search_query(query: str, index_data: InvertedIndexData) -> QueryResult:
     )
 
 
-def tokenize_query(query: str) -> list[str]:
+def tokenize_query(query: str, lemmatizer: WordNetLemmatizer) -> list[str]:
     tokens: list[str] = []
     position = 0
 
@@ -53,7 +58,7 @@ def tokenize_query(query: str) -> list[str]:
         elif upper_token in OPERATORS:
             tokens.append(upper_token)
         else:
-            tokens.append(raw_token.lower())
+            tokens.append(normalize_query_term(raw_token, lemmatizer))
 
         position = match.end()
 
@@ -180,3 +185,7 @@ def evaluate_postfix(
 
 def is_term(token: str) -> bool:
     return token not in OPERATORS and token not in {"(", ")"}
+
+
+def normalize_query_term(token: str, lemmatizer: WordNetLemmatizer) -> str:
+    return lemmatize_token(token.lower(), lemmatizer)

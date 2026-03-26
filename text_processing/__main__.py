@@ -10,7 +10,7 @@ DEFAULT_OUTPUT_DIR = Path("data/processed")
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Extract text from HTML files, build unique tokens, and group tokens by lemma."
+        description="Extract text from HTML files and save per-document tokens and lemmas."
     )
     parser.add_argument(
         "--input-dir",
@@ -22,7 +22,7 @@ def parse_args() -> argparse.Namespace:
         "--output-dir",
         type=Path,
         default=DEFAULT_OUTPUT_DIR,
-        help="Directory for tokens.txt and lemmas.txt.",
+        help="Directory for per-document tokens and lemmas.",
     )
     return parser.parse_args()
 
@@ -51,8 +51,8 @@ def main() -> int:
         return 1
 
     logging.info("Processed %s HTML file(s)", summary.documents)
-    logging.info("Saved %s unique token(s) to %s", summary.tokens, summary.tokens_path)
-    logging.info("Saved %s lemma group(s) to %s", summary.lemmas, summary.lemmas_path)
+    logging.info("Saved per-document tokens to %s", summary.tokens_dir)
+    logging.info("Saved per-document lemmas to %s", summary.lemmas_dir)
     return 0
 
 

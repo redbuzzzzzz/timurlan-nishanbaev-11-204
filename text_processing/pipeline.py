@@ -61,12 +61,18 @@ EXTRA_STOPWORDS = {
 
 
 @dataclass(frozen=True)
+class DocumentProcessingResult:
+    document_id: str
+    output_stem: str
+    tokens: list[str]
+    lemma_groups: dict[str, list[str]]
+
+
+@dataclass(frozen=True)
 class ProcessingSummary:
     documents: int
-    tokens: int
-    lemmas: int
-    tokens_path: Path
-    lemmas_path: Path
+    tokens_dir: Path
+    lemmas_dir: Path
 
 
 def ensure_nltk_data(nltk_data_dir: Path = DEFAULT_NLTK_DATA_DIR) -> None:
@@ -170,8 +176,45 @@ def lemmatize_token(token: str, lemmatizer: WordNetLemmatizer) -> str:
     return lemma
 
 
+def build_lemma_groups(
+    tokens: list[str],
+    lemmatizer: WordNetLemmatizer,
+) -> dict[str, list[str]]:
+    lemma_map: dict[str, set[str]] = defaultdict(set)
+
+    for token in tokens:
+        lemma = lemmatize_token(token, lemmatizer)
+        lemma_map[lemma].add(token)
+
+    return {
+        lemma: sorted(grouped_tokens)
+        for lemma, grouped_tokens in sorted(lemma_map.items())
+    }
+
+
+def analyze_html_file(
+    html_file: Path,
+    stop_words: set[str],
+    lemmatizer: WordNetLemmatizer,
+) -> DocumentProcessingResult:
+    html = html_file.read_text(encoding="utf-8", errors="ignore")
+    text = extract_text_from_html(html)
+    tokens = sorted(tokenize_text(text, stop_words))
+    lemma_groups = build_lemma_groups(tokens, lemmatizer)
+
+    return DocumentProcessingResult(
+        document_id=html_file.name,
+        output_stem=html_file.stem,
+        tokens=tokens,
+        lemma_groups=lemma_groups,
+    )
+
+
 def write_tokens(tokens: list[str], output_path: Path) -> None:
-    output_path.write_text("\n".join(tokens) + "\n", encoding="utf-8")
+    content = "\n".join(tokens)
+    if content:
+        content += "\n"
+    output_path.write_text(content, encoding="utf-8")
 
 
 def write_lemmas(lemma_groups: dict[str, list[str]], output_path: Path) -> None:
@@ -180,7 +223,39 @@ def write_lemmas(lemma_groups: dict[str, list[str]], output_path: Path) -> None:
         grouped_tokens = " ".join(lemma_groups[lemma])
         lines.append(f"{lemma} {grouped_tokens}")
 
-    output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    content = "\n".join(lines)
+    if content:
+        content += "\n"
+    output_path.write_text(content, encoding="utf-8")
+
+
+def prepare_processed_output_dirs(output_dir: Path) -> tuple[Path, Path]:
+    output_dir.mkdir(parents=True, exist_ok=True)
+    tokens_dir = output_dir / "tokens"
+    lemmas_dir = output_dir / "lemmas"
+
+    for directory in (tokens_dir, lemmas_dir):
+        directory.mkdir(parents=True, exist_ok=True)
+        for txt_file in directory.glob("*.txt"):
+            txt_file.unlink()
+
+    return tokens_dir, lemmas_dir
+
+
+def collect_document_results(
+    input_dir: Path,
+    nltk_data_dir: Path = DEFAULT_NLTK_DATA_DIR,
+) -> list[DocumentProcessingResult]:
+    ensure_nltk_data(nltk_data_dir)
+
+    html_files = collect_html_files(input_dir)
+    stop_words = build_stop_words()
+    lemmatizer = WordNetLemmatizer()
+
+    return [
+        analyze_html_file(html_file, stop_words, lemmatizer)
+        for html_file in html_files
+    ]
 
 
 def process_corpus(
@@ -188,41 +263,15 @@ def process_corpus(
     output_dir: Path,
     nltk_data_dir: Path = DEFAULT_NLTK_DATA_DIR,
 ) -> ProcessingSummary:
-    ensure_nltk_data(nltk_data_dir)
+    document_results = collect_document_results(input_dir, nltk_data_dir)
+    tokens_dir, lemmas_dir = prepare_processed_output_dirs(output_dir)
 
-    html_files = collect_html_files(input_dir)
-    stop_words = build_stop_words()
-    all_tokens: set[str] = set()
-
-    for html_file in html_files:
-        html = html_file.read_text(encoding="utf-8", errors="ignore")
-        text = extract_text_from_html(html)
-        all_tokens.update(tokenize_text(text, stop_words))
-
-    sorted_tokens = sorted(all_tokens)
-    lemmatizer = WordNetLemmatizer()
-    lemma_map: dict[str, set[str]] = defaultdict(set)
-
-    for token in sorted_tokens:
-        lemma = lemmatize_token(token, lemmatizer)
-        lemma_map[lemma].add(token)
-
-    sorted_lemma_map = {
-        lemma: sorted(tokens)
-        for lemma, tokens in sorted(lemma_map.items())
-    }
-
-    output_dir.mkdir(parents=True, exist_ok=True)
-    tokens_path = output_dir / "tokens.txt"
-    lemmas_path = output_dir / "lemmas.txt"
-
-    write_tokens(sorted_tokens, tokens_path)
-    write_lemmas(sorted_lemma_map, lemmas_path)
+    for position, result in enumerate(document_results, start=1):
+        write_tokens(result.tokens, tokens_dir / f"tokens_{position}.txt")
+        write_lemmas(result.lemma_groups, lemmas_dir / f"lemmas_{position}.txt")
 
     return ProcessingSummary(
-        documents=len(html_files),
-        tokens=len(sorted_tokens),
-        lemmas=len(sorted_lemma_map),
-        tokens_path=tokens_path,
-        lemmas_path=lemmas_path,
+        documents=len(document_results),
+        tokens_dir=tokens_dir,
+        lemmas_dir=lemmas_dir,
     )

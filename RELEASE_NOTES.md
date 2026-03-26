@@ -2,15 +2,16 @@
 
 ## Version 3.0
 
-- building an inverted index for `data/raw/*.html`
+- building a lemma-based inverted index for `data/raw/*.html`
 - saving `data/index/inverted_index.json`
+- lemmatizing query terms before boolean search
 - running boolean search with `AND`, `OR`, `NOT` and parentheses
 
 ## Version 2.0
 
 - extracting text from `data/raw/*.html`
-- building one shared `tokens.txt` for the whole corpus
-- building one shared `lemmas.txt` with grouped tokens by lemma
+- saving per-document tokens to `data/processed/tokens/<doc_id>.txt`
+- saving per-document lemma groups to `data/processed/lemmas/<doc_id>.txt`
 
 ## Version 1.0
 

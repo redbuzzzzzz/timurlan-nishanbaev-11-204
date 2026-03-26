@@ -27,7 +27,7 @@ python -m html_downloader
 python -m text_processing
 ```
 
-Результат второго этапа появится в `data/processed/`.
+Результат второго этапа появится в `data/processed/tokens/` и `data/processed/lemmas/`.
 
 ## 5. Построить индекс и выполнить поиск
 
@@ -36,6 +36,6 @@ python -m boolean_search --build-index
 python -m boolean_search "(kursk AND tank) OR rommel"
 ```
 
-Индекс появится в `data/index/`, результаты поиска выводятся в консоль.
+Индекс появится в `data/index/`, поиск идет по леммам, результаты выводятся в консоль.
 
 Если нужно использовать свой набор ссылок, замените содержимое `seed_urls.txt` перед запуском.
